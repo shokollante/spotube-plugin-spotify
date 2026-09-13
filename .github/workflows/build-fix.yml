@@ -1,0 +1,64 @@
+name: Build Spotify plugin 0.2.3 test
+
+on:
+  push:
+    branches:
+      - fix/spotify-0.2.3-token-refresh
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          submodules: false
+
+      - name: Checkout submodules over HTTPS
+        run: |
+          git config --global url."https://github.com/".insteadOf "git@github.com:"
+          git submodule sync --recursive
+          git submodule update --init --recursive
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          flutter-version: 3.35.2
+
+      - name: Install Hetu build tools
+        run: dart pub global activate hetu_script_dev_tools
+
+      - name: Build plugin
+        run: make
+
+      - name: Archive plugin
+        run: make archive
+
+      - name: Verify plugin archive
+        run: |
+          test -f build/plugin.smplug
+          ls -lh build/plugin.smplug
+
+      - name: Upload build artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: spotify-plugin-0.2.3
+          path: build/plugin.smplug
+
+      - name: Publish test release
+        uses: ncipollo/release-action@v1
+        with:
+          tag: 0.2.3-test
+          name: 0.2.3 test
+          prerelease: true
+          allowUpdates: true
+          replacesArtifacts: true
+          artifacts: build/plugin.smplug
+          omitBodyDuringUpdate: true
+          token: ${{ secrets.GITHUB_TOKEN }}

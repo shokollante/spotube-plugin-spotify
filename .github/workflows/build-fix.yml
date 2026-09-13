@@ -54,8 +54,9 @@ jobs:
       - name: Publish test release
         uses: ncipollo/release-action@v1
         with:
-          tag: 0.2.3-test
-          name: 0.2.3 test
+          tag: 0.2.3-test-fixed
+          name: 0.2.3 test (token refresh)
+          commit: ${{ github.sha }}
           prerelease: true
           allowUpdates: true
           replacesArtifacts: true

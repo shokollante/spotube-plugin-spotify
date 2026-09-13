@@ -20,7 +20,17 @@ jobs:
           ref: 6673ed237cfe0b48a19928785e6394e3cd11bbf3
           path: plugin
 
-      - name: Patch Hetu syntax while keeping Kai playback changes
+      - name: Patch broken plugin export
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          p = Path('plugin/src/plugin.ht')
+          s = p.read_text()
+          s = s.replace('export { TemplateMetadataProviderPlugin }', 'export { YouTubeAudioSourcePlugin }')
+          p.write_text(s)
+          PY
+
+      - name: Patch Hetu syntax while keeping playback fixes
         run: |
           cat > plugin/src/segments/audio_source.ht <<'EOF'
           import "module:spotube_plugin" as spotube_plugin
@@ -36,7 +46,7 @@ jobs:
                   "title": d["title"],
                   "artists": [d["author"]],
                   "duration": d["duration"],
-                  "thumbnail": d["thumbnail"],
+                  "thumbnail": "https://i.ytimg.com/vi/${d["id"]}/hqdefault.jpg",
                   "externalUri": "https://youtube.com/watch?v=${d["id"]}",
                 }
               }).toList()
@@ -110,15 +120,15 @@ jobs:
       - name: Upload workflow artifact
         uses: actions/upload-artifact@v4
         with:
-          name: youtube-by-kai-1.0.1-fixed
+          name: youtube-by-kai-1.0.2-fixed
           path: plugin/build/plugin.smplug
 
       - name: Publish test release
         uses: ncipollo/release-action@v1
         with:
-          tag: youtube-kai-1.0.1-fixed
-          name: YouTube By Kai 1.0.1 Fixed
-          body: Experimental Spotube YouTube audio-source build based on Ka-iPy's playback fix, with Hetu syntax corrected so it compiles.
+          tag: youtube-kai-1.0.2-fixed
+          name: YouTube By Kai 1.0.2 Fixed
+          body: Experimental Spotube YouTube audio-source build. Includes Kai playback changes plus the missing YouTubeAudioSourcePlugin export fix and lossy stream classification.
           allowUpdates: true
           replacesArtifacts: true
           artifacts: plugin/build/plugin.smplug

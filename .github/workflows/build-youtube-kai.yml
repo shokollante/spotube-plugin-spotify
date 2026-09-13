@@ -1,0 +1,54 @@
+name: Build YouTube By Kai
+
+on:
+  push:
+    branches:
+      - build-youtube-kai
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout YouTube By Kai source
+        uses: actions/checkout@v4
+        with:
+          repository: Ka-iPy/spotube-plugin-youtube-audio
+          ref: 6673ed237cfe0b48a19928785e6394e3cd11bbf3
+          path: plugin
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          flutter-version: 3.35.2
+
+      - name: Install Hetu build tools
+        run: dart pub global activate hetu_script_dev_tools
+
+      - name: Build plugin
+        working-directory: plugin
+        run: |
+          mkdir -p build
+          make
+          make archive
+
+      - name: Upload workflow artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: youtube-by-kai-1.0.1
+          path: plugin/build/plugin.smplug
+
+      - name: Publish test release
+        uses: ncipollo/release-action@v1
+        with:
+          tag: youtube-kai-1.0.1
+          name: YouTube By Kai 1.0.1
+          body: Experimental Spotube YouTube audio-source build from Ka-iPy/spotube-plugin-youtube-audio commit 6673ed237cfe0b48a19928785e6394e3cd11bbf3.
+          allowUpdates: true
+          replacesArtifacts: true
+          artifacts: plugin/build/plugin.smplug
+          token: ${{ secrets.GITHUB_TOKEN }}
